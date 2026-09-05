@@ -870,11 +870,11 @@ function FormationEditor() {
     }
   }, [playerCount]);
 
-  // Players on the pitch
-  const pitchPlayerIds = new Set(startingXI.filter(Boolean).map((p) => p!._id));
-  const benchPlayerIds = new Set(benchPlayers.map((p) => p._id));
-  const allBenchPlayers = players.filter((p) => !pitchPlayerIds.has(p._id) && !benchPlayerIds.has(p._id));
-  const teamBenchPlayers = allBenchPlayers.filter((p) => teamPlayerIds.has(p._id));
+  // Players on the pitch - memoized to prevent recalculation on every render
+  const pitchPlayerIds = React.useMemo(() => new Set(startingXI.filter(Boolean).map((p) => p!._id)), [startingXI]);
+  const benchPlayerIds = React.useMemo(() => new Set(benchPlayers.map((p) => p._id)), [benchPlayers]);
+  const allBenchPlayers = React.useMemo(() => players.filter((p) => !pitchPlayerIds.has(p._id) && !benchPlayerIds.has(p._id)), [players, pitchPlayerIds, benchPlayerIds]);
+  const teamBenchPlayers = React.useMemo(() => allBenchPlayers.filter((p) => teamPlayerIds.has(p._id)), [allBenchPlayers, teamPlayerIds]);
 
   // Drag handlers
   const handleDragStart = (event: DragStartEvent) => {

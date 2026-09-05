@@ -83,7 +83,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Logo */}
       <div className="flex items-center gap-2 px-3 h-14 border-b shrink-0">
         <img
-          src="http://localhost:3000/logo.png"
+          src="/logo.png"
           alt="N.S Club Logo"
           className="h-7 w-auto object-contain"
         />

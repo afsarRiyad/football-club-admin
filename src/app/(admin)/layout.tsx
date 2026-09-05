@@ -69,7 +69,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <SheetContent side="left" className="w-72 p-0 bg-card border-r">
           <div className="flex items-center gap-2 px-4 h-14 border-b shrink-0">
             <img
-              src="http://localhost:3000/logo.png"
+              src="/logo.png"
               alt="N.S Club Logo"
               className="h-7 w-auto object-contain"
             />
