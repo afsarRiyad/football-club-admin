@@ -25,8 +25,14 @@ export function clearTokens() {
   sessionStorage.removeItem(REFRESH_KEY);
 }
 
+const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!apiURL) {
+  throw new Error("Missing NEXT_PUBLIC_API_URL env var. Set it to your deployed backend URL (for example https://football-club-997m.onrender.com/api).");
+}
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
+  baseURL: apiURL,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });
@@ -86,7 +92,7 @@ api.interceptors.response.use(
     try {
       const refreshToken = getRefreshToken();
       const { data } = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/auth/refresh-token`,
+        `${apiURL}/auth/refresh-token`,
         refreshToken ? { refreshToken } : {},
         { withCredentials: true }
       );

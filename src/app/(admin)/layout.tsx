@@ -68,10 +68,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetContent side="left" className="w-72 p-0 bg-card border-r">
           <div className="flex items-center gap-2 px-4 h-14 border-b shrink-0">
-            <div className="h-7 w-7 bg-primary rounded-md flex items-center justify-center shrink-0">
-              <span className="text-primary-foreground font-bold text-sm">F</span>
-            </div>
-            <span className="font-bold text-sm">FClub Admin</span>
+            <img
+              src="http://localhost:3000/logo.png"
+              alt="N.S Club Logo"
+              className="h-7 w-auto object-contain"
+            />
+            <span className="font-bold text-sm">N.S Club Admin</span>
           </div>
           <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-1" onClick={() => setMobileMenuOpen(false)}>
             <div className="space-y-0.5">
