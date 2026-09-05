@@ -736,23 +736,6 @@ function FormationEditor() {
       }
 
       const clubId = typeof t.club === "object" ? t.club?._id || t.club : t.club;
-      // Fetch club players + unassigned players (club: null)
-      const params: any = { limit: 100 };
-      if (clubId) params.club = clubId;
-      const { data: clubData } = await api.get("/players", { params });
-      const clubPlayers = clubData.data || [];
-
-      // Also fetch players with no club assigned
-      const { data: unassignedData } = await api.get("/players", { params: { limit: 100 } });
-      const unassignedPlayers = (unassignedData.data || []).filter((p: Player) => !p.club || (typeof p.club === "object" && !p.club._id));
-
-      // Merge and deduplicate
-      const allPlayers = [...clubPlayers];
-      const clubPlayerIds = new Set(clubPlayers.map((p: Player) => p._id));
-      for (const p of unassignedPlayers) {
-        if (!clubPlayerIds.has(p._id)) allPlayers.push(p);
-      }
-      setPlayers(allPlayers);
 
       // Track which players are in the team
       const tPlayerIds = (t.players || []).map((p: any) => {
@@ -762,16 +745,36 @@ function FormationEditor() {
       }).filter(Boolean) as string[];
       setTeamPlayerIds(new Set(tPlayerIds));
 
-      // In matchday mode, immediately fetch matches and load the saved formation
+      // Fetch club players, unassigned players and scheduled matches in parallel
+      const playersParams: any = { limit: 100 };
+      if (clubId) playersParams.club = clubId;
+      const [clubRes, unassignedRes, matchesRes] = await Promise.all([
+        api.get("/players", { params: playersParams }),
+        api.get("/players", { params: { limit: 100 } }),
+        mode === "matchday"
+          ? api.get("/matches", {
+              params: { club: clubId, sort: "matchDate", limit: 50, status: "SCHEDULED" },
+            })
+          : Promise.resolve({ data: { data: [] } }),
+      ]);
+      const clubPlayers = clubRes.data?.data || [];
+      const unassignedPlayers = (unassignedRes.data?.data || []).filter(
+        (p: Player) => !p.club || (typeof p.club === "object" && !p.club._id)
+      );
+
+      // Merge and deduplicate
+      const allPlayers = [...clubPlayers];
+      const clubPlayerIds = new Set(clubPlayers.map((p: Player) => p._id));
+      for (const p of unassignedPlayers) {
+        if (!clubPlayerIds.has(p._id)) allPlayers.push(p);
+      }
+      setPlayers(allPlayers);
+
+      // In matchday mode, load the saved formation for the first scheduled match
       console.log("[Formation] loadTeamData mode:", mode, "team:", t?.name);
       if (mode === "matchday") {
         try {
-          // Fetch all matches for this club, then filter to future/scheduled ones
-          const allRes = await api.get("/matches", { params: { club: clubId, sort: "matchDate", limit: 50 } });
-          const allMatches = allRes.data?.data || [];
-          const now = new Date();
-          // Only show SCHEDULED matches for matchday formation
-          const scheduledOnly = allMatches.filter((m: any) => m.status === "SCHEDULED");
+          const scheduledOnly = matchesRes.data?.data || [];
           setScheduledMatches(scheduledOnly);
 
           // Load formation for the first match
@@ -795,10 +798,9 @@ function FormationEditor() {
     setLoadingMatches(true);
     try {
       const clubId = typeof team.club === "object" ? team.club?._id || team.club : team.club;
-      // Only show SCHEDULED matches
-      const allRes = await api.get("/matches", { params: { club: clubId, sort: "matchDate", limit: 50 } });
-      const allMatches = allRes.data?.data || [];
-      const scheduledOnly = allMatches.filter((m: any) => m.status === "SCHEDULED");
+      // Only fetch SCHEDULED matches (server-side filter)
+      const allRes = await api.get("/matches", { params: { club: clubId, sort: "matchDate", limit: 50, status: "SCHEDULED" } });
+      const scheduledOnly = allRes.data?.data || [];
       setScheduledMatches(scheduledOnly);
 
       if (scheduledOnly.length > 0 && !selectedMatchId) {

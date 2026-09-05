@@ -111,14 +111,8 @@ export default function TournamentBracketPage() {
 
   const fetchTournament = async () => {
     try {
-      // Try tournaments API first, fallback to competitions API
-      try {
-        const { data } = await api.get(`/tournaments/${tournamentId}`);
-        setTournament(data.data?.tournament || data.data);
-        return;
-      } catch {}
-      const { data } = await api.get(`/competitions/${tournamentId}`);
-      setTournament(data.data?.competition || data.data);
+      const { data } = await api.get(`/tournaments/${tournamentId}`);
+      setTournament(data.data?.tournament || data.data);
     } catch (e) {
       console.error("Failed to fetch tournament:", e);
     }
@@ -127,17 +121,12 @@ export default function TournamentBracketPage() {
   const fetchBracket = async () => {
     setLoading(true);
     try {
-      // Try tournaments bracket first, fallback to competitions
-      try {
-        const { data } = await api.get(`/tournaments/${tournamentId}/bracket`);
-        setBracket(data.data?.bracket || {});
-        if (data.data?.tournament) setTournament(data.data.tournament);
-        return;
-      } catch {}
-      // No bracket available for competition-type tournaments
-      setBracket({});
+      const { data } = await api.get(`/tournaments/${tournamentId}/bracket`);
+      setBracket(data.data?.bracket || {});
+      if (data.data?.tournament) setTournament(data.data.tournament);
     } catch (e) {
       console.error("Failed to fetch bracket:", e);
+      setBracket({});
     } finally {
       setLoading(false);
     }
@@ -150,22 +139,14 @@ export default function TournamentBracketPage() {
     } catch (e) {
       console.error("Failed to fetch teams:", e);
     }
-  };
-
-  // ─── Schedule match ───
+  };  // ─── Schedule match ───
   const handleSchedule = async () => {
     if (!editMatch) return;
     setSaving(true);
     try {
-      // Update via recordResult with existing score, or just patch the match date
-      // We need to use the tournament update endpoint
-      await api.patch(`/competitions/${tournamentId}`, {
-        $set: {
-          [`matches.$[elem].matchDate`]: editDate,
-          [`matches.$[elem].venue`]: editVenue,
-        },
-      }, {
-        params: { "arrayFilters[elem._id]": editMatch._id },
+      await api.patch(`/tournaments/${tournamentId}/matches/${editMatch._id}`, {
+        matchDate: editDate,
+        venue: editVenue,
       });
       // Re-fetch
       await fetchBracket();
@@ -181,19 +162,8 @@ export default function TournamentBracketPage() {
   const handleGoLive = async (match: BracketMatch) => {
     setSaving(true);
     try {
-      // Record result to set status
-      // Actually, we need a way to set status to LIVE
-      // Let's use recordMatchResult but with current scores
-      await api.post(`/competitions/${tournamentId}/matches/${match._id}/result`, {
-        homeScore: match.homeScore ?? 0,
-        awayScore: match.awayScore ?? 0,
-      });
-      // Hmm, that marks it completed. We need a different approach.
-      // Let's patch the tournament directly
-      await api.patch(`/competitions/${tournamentId}`, {
-        [`matches.$[elem].status`]: "LIVE",
-      }, {
-        params: { "arrayFilters[elem._id]": match._id },
+      await api.patch(`/tournaments/${tournamentId}/matches/${match._id}`, {
+        status: "LIVE",
       });
       await fetchBracket();
     } catch (e: any) {
@@ -208,7 +178,7 @@ export default function TournamentBracketPage() {
     if (!scoreMatch) return;
     setSaving(true);
     try {
-      await api.post(`/competitions/${tournamentId}/matches/${scoreMatch._id}/result`, {
+      await api.post(`/tournaments/${tournamentId}/matches/${scoreMatch._id}/result`, {
         homeScore,
         awayScore,
       });
@@ -233,8 +203,8 @@ export default function TournamentBracketPage() {
   const handleAddTeam = async () => {
     if (!selectedTeamId) return;
     setSaving(true);
-    try {
-      await api.post(`/competitions/${tournamentId}/teams`, { teamId: selectedTeamId });
+    try {      await api.post(`/tournaments/${tournamentId}/teams`, { teamId: selectedTeamId });
+
       await fetchTournament();
       setShowAddTeam(false);
       setSelectedTeamId("");
@@ -250,7 +220,7 @@ export default function TournamentBracketPage() {
     if (!confirm("Remove this team from the tournament?")) return;
     setSaving(true);
     try {
-      await api.delete(`/competitions/${tournamentId}/teams/${teamId}`);
+      await api.delete(`/tournaments/${tournamentId}/teams/${teamId}`);
       await fetchTournament();
     } catch (e: any) {
       toast.error(e.response?.data?.message || "Failed to remove team");
@@ -263,7 +233,7 @@ export default function TournamentBracketPage() {
   const handleGenerateBracket = async () => {
     setSaving(true);
     try {
-      await api.post(`/competitions/${tournamentId}/generate-bracket`, {
+      await api.post(`/tournaments/${tournamentId}/generate-bracket`, {
         startDate: startDate || undefined,
         venue: venue || undefined,
         matchIntervalDays: intervalDays,
@@ -282,7 +252,7 @@ export default function TournamentBracketPage() {
   const handleDelete = async () => {
     if (!confirm("Delete this tournament? This cannot be undone.")) return;
     try {
-      await api.delete(`/competitions/${tournamentId}`);
+      await api.delete(`/tournaments/${tournamentId}`);
       router.push("/tournaments");
     } catch (e: any) {
       toast.error(e.response?.data?.message || "Failed to delete");

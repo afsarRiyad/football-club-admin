@@ -34,6 +34,7 @@ if (!apiURL) {
 const api = axios.create({
   baseURL: apiURL,
   withCredentials: true,
+  timeout: 60000, // fail visibly instead of spinning forever (covers Render cold starts ~30-50s)
   headers: { "Content-Type": "application/json" },
 });
 
@@ -69,8 +70,7 @@ api.interceptors.response.use(
       error.response?.status !== 401 ||
       originalRequest._retry ||
       originalRequest.url === "/auth/refresh-token" ||
-      originalRequest.url === "/auth/login" ||
-      originalRequest.url === "/auth/me"
+      originalRequest.url === "/auth/login"
     ) {
       return Promise.reject(error);
     }

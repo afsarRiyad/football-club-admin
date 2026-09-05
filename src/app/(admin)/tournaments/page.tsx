@@ -284,7 +284,7 @@ export default function TournamentsPage() {
     try {
       const params: any = { page, limit: 10 };
       if (search) params.search = search;
-      const { data: res } = await api.get("/competitions", { params: { ...params, type: "TOURNAMENT" } });
+      const { data: res } = await api.get("/tournaments", { params });
       setTournaments((res.data || []) as Tournament[]);
       setTotalPages(res.totalPages || 1);
       setTotal(res.total || 0);
@@ -327,22 +327,26 @@ export default function TournamentsPage() {
     try {
       const selectedTeams = formTeams.filter(Boolean);
 
-      // Create the competition with tournament type
+      // Create the tournament with its team size so the bracket fits
       const tournamentData: any = {
         club: clubId,
         name: formName,
-        type: "TOURNAMENT",
-        format: "KNOCKOUT",
-        description: formDescription,
+        format: "SINGLE_KNOCKOUT",
+        teamCount: formTeamCount,
+        startDate: formStartDate || undefined,
+        endDate: formEndDate || undefined,
+        venue: formVenue || undefined,
+        description: formDescription || undefined,
+        matchIntervalDays: formMatchIntervalDays,
       };
 
-      const { data: res } = await api.post("/competitions", tournamentData);
-      const tournamentId = res.data.competition._id;
+      const { data: res } = await api.post("/tournaments", tournamentData);
+      const tournamentId = res.data.tournament._id;
 
-      // Add teams to the competition
+      // Add selected teams
       for (const teamId of selectedTeams) {
         try {
-          await api.post(`/competitions/${tournamentId}/teams`, { teamId });
+          await api.post(`/tournaments/${tournamentId}/teams`, { teamId });
         } catch (e) {
           console.error("Failed to add team:", e);
         }
@@ -350,7 +354,7 @@ export default function TournamentsPage() {
 
       // Generate bracket with auto-scheduling
       try {
-        await api.post(`/competitions/${tournamentId}/generate-bracket`, {
+        await api.post(`/tournaments/${tournamentId}/generate-bracket`, {
           startDate: formStartDate || undefined,
           venue: formVenue || undefined,
           matchIntervalDays: formMatchIntervalDays,
@@ -372,7 +376,7 @@ export default function TournamentsPage() {
     if (!selected) return;
     setSubmitting(true);
     try {
-      await api.delete(`/competitions/${selected._id}`);
+      await api.delete(`/tournaments/${selected._id}`);
       setDeleteOpen(false);
       fetchTournaments();
     } catch (e: any) {
@@ -385,28 +389,16 @@ export default function TournamentsPage() {
   // Record match result from bracket view
   const handleRecordResult = async (matchId: string, homeScore: number, awayScore: number) => {
     if (!selected) return;
-    // Try the tournament endpoint first, fall back to matches endpoint
     try {
-      const { data: res } = await api.post(`/competitions/${selected._id}/matches/${matchId}/result`, {
+      const { data: res } = await api.post(`/tournaments/${selected._id}/matches/${matchId}/result`, {
         homeScore,
         awayScore,
       });
       // Update the selected tournament with the new data
       setSelected(res.data.tournament);
-    } catch {
-      // Fallback: try the general matches endpoint
-      try {
-        await api.patch(`/matches/${matchId}`, {
-          score: { home: homeScore, away: awayScore },
-          status: "FT",
-        });
-        // Re-fetch the tournament to get updated bracket
-        const { data: res } = await api.get(`/tournaments/${selected._id}`);
-        setSelected(res.data.tournament);
-      } catch (e2: any) {
-        toast.error(e2.response?.data?.message || "Failed to record result");
-        throw e2;
-      }
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Failed to record result");
+      throw e;
     }
   };
 
@@ -989,7 +981,7 @@ export default function TournamentsPage() {
                     // Re-fetch tournament to get updated data
                     if (selected) {
                       api.get(`/tournaments/${selected._id}`).then(({ data }) => {
-                        setSelected(data.data.tournament);
+                        setSelected(data.data?.tournament || data.data);
                       }).catch(() => {});
                     }
                   }}
