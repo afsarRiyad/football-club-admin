@@ -16,6 +16,8 @@ import {
   X, Shield, Check, Calendar, Pencil, Save, Radio,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { TableRowsSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useRouter } from "next/navigation";
 import { LiveMatchPanel } from "@/components/admin/live-match-panel";
 import { useClub } from "@/lib/use-club";
@@ -443,15 +445,16 @@ export default function TournamentsPage() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
-                  </TableCell>
-                </TableRow>
+                <TableRowsSkeleton rows={5} cols={5} />
               ) : tournaments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    No tournaments found
+                  <TableCell colSpan={5} className="p-0 border-0">
+                    <EmptyState
+                      icon={Swords}
+                      title="No tournaments found"
+                      message="Tournaments you create will show up here — click &quot;Create Tournament&quot; to start one."
+                      className="py-10"
+                    />
                   </TableCell>
                 </TableRow>
               ) : (

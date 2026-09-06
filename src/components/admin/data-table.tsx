@@ -11,7 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, Loader2, Upload, X, Image } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, Loader2, Upload, X, Image, Inbox } from "lucide-react";
+import { MobileListSkeleton, TableRowsSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export interface Column<T> {
   key: string;
@@ -51,6 +53,9 @@ interface DataTableProps<T> {
   defaultPayload?: Record<string, any>;
   extraParams?: Record<string, any>;
   imageField?: string;
+  /** Optional overrides for the empty-state copy (defaults derive from `title`). */
+  emptyTitle?: string;
+  emptyMessage?: string;
 }
 
 /**
@@ -200,6 +205,8 @@ export default function DataTable<T extends { _id: string }>({
   defaultPayload,
   extraParams,
   imageField,
+  emptyTitle,
+  emptyMessage,
 }: DataTableProps<T>) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
@@ -232,6 +239,9 @@ export default function DataTable<T extends { _id: string }>({
     if (dynamicOptions[field.key]) return dynamicOptions[field.key];
     return field.options || [];
   };
+
+  // Column count for the loading skeleton (image + data columns + actions)
+  const colCount = columns.length + 1 + (imageField ? 1 : 0);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -443,18 +453,32 @@ export default function DataTable<T extends { _id: string }>({
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {/* Mobile Card View */}
-          <div className="block md:hidden space-y-3 pb-4">
-            {loading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          {loading ? (
+            <>
+              {/* Mobile skeleton */}
+              <div className="block md:hidden p-4">
+                <MobileListSkeleton items={4} />
               </div>
-            ) : data.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No data found
+              {/* Desktop skeleton rows */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableBody>
+                    <TableRowsSkeleton rows={6} cols={colCount} />
+                  </TableBody>
+                </Table>
               </div>
-            ) : (
-              data.map((item) => (
+            </>
+          ) : data.length === 0 ? (
+            <EmptyState
+              icon={Inbox}
+              title={emptyTitle || `No ${title.toLowerCase()} found`}
+              message={emptyMessage || `New ${title.toLowerCase()} will appear here as soon as they're added — use the "Add" button above to create the first one.`}
+            />
+          ) : (
+            <>
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-3 pb-4">
+                {data.map((item) => (
                 <div key={item._id} className="flex gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
                   {imageField && (
                     <div className="w-12 h-12 rounded-md overflow-hidden shrink-0">
@@ -503,10 +527,9 @@ export default function DataTable<T extends { _id: string }>({
                     )}
                   </div>
                 </div>
-              ))
-            )}
+                ))}
 
-            {/* Mobile Pagination */}
+              {/* Mobile Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between pt-2">
                 <p className="text-sm text-muted-foreground">
@@ -524,33 +547,20 @@ export default function DataTable<T extends { _id: string }>({
             )}
           </div>
 
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {imageField && <TableHead className="w-12">Photo</TableHead>}
-                  {columns.map((col) => (
-                    <TableHead key={col.key} className={col.className}>{col.label}</TableHead>
-                  ))}
-                  <TableHead className="w-20">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length + 1 + (imageField ? 1 : 0)} className="text-center py-8">
-                      <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
-                ) : data.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length + 1 + (imageField ? 1 : 0)} className="text-center py-8 text-muted-foreground">
-                      No data found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  data.map((item) => (
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {imageField && <TableHead className="w-12">Photo</TableHead>}
+                      {columns.map((col) => (
+                        <TableHead key={col.key} className={col.className}>{col.label}</TableHead>
+                      ))}
+                      <TableHead className="w-20">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.map((item) => (
                     <TableRow key={item._id}>
                       {imageField && (
                         <TableCell>
@@ -580,8 +590,7 @@ export default function DataTable<T extends { _id: string }>({
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
+                  ))}
               </TableBody>
             </Table>
 
@@ -601,7 +610,9 @@ export default function DataTable<T extends { _id: string }>({
                 </div>
               </div>
             )}
-          </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

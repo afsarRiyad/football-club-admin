@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-provider";
 import Sidebar from "@/components/layout/sidebar";
 import { PageSpinner } from "@/components/ui/spinner";
+import { PageSkeleton } from "@/components/ui/skeleton";
 import { Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -51,7 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  if (loading) return <PageSpinner />;
+  if (loading) return <PageSkeleton />;
   if (!user) {
     router.push("/login");
     return <PageSpinner />;

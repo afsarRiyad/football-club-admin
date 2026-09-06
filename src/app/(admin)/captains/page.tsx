@@ -9,6 +9,7 @@ import { Loader2, Crown, Shield, Star, User, Users, Check, X } from "lucide-reac
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { Player, Team } from "@/types";
+import { PageSkeleton } from "@/components/ui/skeleton";
 
 /* ── Player card for captain selection ── */
 function PlayerRow({
@@ -237,11 +238,7 @@ export default function CaptainsPage() {
   const viceCaptainPlayer = players.find((p) => p._id === viceCaptainId);
 
   if (loading || loadingTeams) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <PageSkeleton rows={8} />;
   }
 
   return (

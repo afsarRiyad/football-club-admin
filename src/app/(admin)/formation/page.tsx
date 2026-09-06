@@ -23,6 +23,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Save, Shield, Shirt, ArrowRight, X, RotateCcw, Crown, Calendar, ChevronDown, Users, UserMinus, Filter, Undo2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { PageSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 /* ── Match Formation type from API ── */
 interface MatchFormationEntry {
@@ -1105,18 +1107,16 @@ function FormationEditor() {
   );
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <PageSkeleton rows={7} />;
   }
 
   if (!team) {
     return (
-      <div className="text-center py-20">
-        <p className="text-muted-foreground">No team found. Create a team first.</p>
-      </div>
+      <EmptyState
+        icon={Shirt}
+        title="No team found"
+        message="Formations are built around a team. Create a team under Teams first, then come back to set up your starting XI and bench."
+      />
     );
   }
 

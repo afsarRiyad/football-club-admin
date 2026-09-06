@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useClub } from "@/lib/use-club";
+import { MobileListSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface MatchRequest {
   _id: string;
@@ -137,13 +139,13 @@ export default function MatchRequestsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
+            <MobileListSkeleton items={4} />
           ) : requests.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              No match requests yet
-            </div>
+            <EmptyState
+              icon={Mail}
+              title="No match requests yet"
+              message="When another team fills out the &quot;Request a Match&quot; form on your website, their request will show up here for you to approve or reject."
+            />
           ) : (
             <div className="space-y-3">
               {requests.map((req) => {

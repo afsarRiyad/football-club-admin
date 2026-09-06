@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, UserCheck, Calendar, Newspaper, Trophy, Shield } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface StatCard {
   title: string;
@@ -66,9 +67,11 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl md:text-3xl font-bold">
-                {loading ? "—" : stat.value}
-              </div>
+              {loading ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <div className="text-2xl md:text-3xl font-bold">{stat.value}</div>
+              )}
             </CardContent>
           </Card>
         ))}

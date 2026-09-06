@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { TableRowsSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface Player {
   _id: string;
@@ -135,7 +137,9 @@ function StatisticsContent() {
     setLoadingStats(true);
     try {
       const { data } = await api.get("/statistics", { params: { club: clubId, limit: 1000 } });
-      setAllStats(data.data || []);
+      // Drop rows whose player no longer exists (deleted player => populated null).
+      // They can't be displayed and used to crash this page during render.
+      setAllStats((data.data || []).filter((s: any) => s && s.player));
     } catch (e) {
       console.error("Failed to fetch stats:", e);
     } finally {
@@ -156,11 +160,19 @@ function StatisticsContent() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // Resolve a stat's player id safely.
+  // Stats may reference a player that was deleted (populated to null) —
+  // dereferencing that used to crash the whole page, so treat it as "no player".
+  const getStatPlayerId = (s: Statistic): string | null => {
+    if (!s?.player) return null;
+    return typeof s.player === "object" ? s.player._id : s.player;
+  };
+
   // Get stat value for player
   const getStatValue = (playerId: string, type: string): number => {
     const stat = allStats.find((s) => {
-      const pid = typeof s.player === "object" ? s.player._id : s.player;
-      return pid === playerId && s.type === type && s.season === season;
+      const pid = getStatPlayerId(s);
+      return pid !== null && pid === playerId && s.type === type && s.season === season;
     });
     return stat?.value || 0;
   };
@@ -168,8 +180,8 @@ function StatisticsContent() {
   // Get stat ID
   const getStatId = (playerId: string, type: string): string | null => {
     const stat = allStats.find((s) => {
-      const pid = typeof s.player === "object" ? s.player._id : s.player;
-      return pid === playerId && s.type === type && s.season === season;
+      const pid = getStatPlayerId(s);
+      return pid !== null && pid === playerId && s.type === type && s.season === season;
     });
     return stat?._id || null;
   };
@@ -465,13 +477,20 @@ function StatisticsContent() {
 
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="overflow-x-auto">
+              <Table>
+                <TableBody>
+                  <TableRowsSkeleton rows={8} cols={9} />
+                </TableBody>
+              </Table>
             </div>
           ) : rankingData.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <p className="text-sm">No players found</p>
-            </div>
+            <EmptyState
+              icon={Users}
+              title="No players found"
+              message="Add players to the club and they'll appear here with their season statistics."
+              className="py-10"
+            />
           ) : (
             <div className="overflow-x-auto">
               <Table className="text-xs">

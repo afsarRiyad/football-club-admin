@@ -16,8 +16,10 @@ import { useClub } from "@/lib/use-club";
 import api from "@/lib/api";
 import { Match } from "@/types";
 import {
-  Plus, Search, Radio, Pencil, Trash2, ChevronLeft, ChevronRight, Loader2,
+  Plus, Search, Radio, Pencil, Trash2, ChevronLeft, ChevronRight, Loader2, Calendar,
 } from "lucide-react";
+import { MobileListSkeleton, TableRowsSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import toast from "react-hot-toast";
 
 interface TeamOption {
@@ -209,13 +211,14 @@ function MatchesContent() {
       {/* Mobile Card View */}
       <div className="block md:hidden space-y-3">
         {loading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
+          <MobileListSkeleton items={4} />
         ) : matches.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No matches found
-          </div>
+          <EmptyState
+            icon={Calendar}
+            title="No matches found"
+            message="Scheduled matches will show up here — use the &quot;Add Match&quot; button to create the first one."
+            className="py-10"
+          />
         ) : (
           matches.map((m) => (
             <Card key={m._id} className={`${liveMatch?._id === m._id ? "border-red-500/50 bg-red-500/5" : ""} hover:border-primary/50 transition-colors`}>
@@ -301,15 +304,16 @@ function MatchesContent() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
+                  <TableRowsSkeleton rows={5} cols={6} />
                 ) : matches.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No matches found
+                    <TableCell colSpan={6} className="p-0 border-0">
+                      <EmptyState
+                        icon={Calendar}
+                        title="No matches found"
+                        message="Scheduled matches will show up here — use the &quot;Add Match&quot; button to create the first one."
+                        className="py-10"
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (

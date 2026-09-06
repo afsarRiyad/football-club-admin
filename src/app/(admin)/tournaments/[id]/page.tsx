@@ -15,6 +15,8 @@ import {
   Edit3, Trash2, Users, Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import toast from "react-hot-toast";
 
 // ─── Types ───
@@ -309,21 +311,21 @@ export default function TournamentBracketPage() {
   const activeRounds = ROUND_ORDER.filter((r) => bracket[r]?.length > 0);
 
   if (loading && !tournament) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <PageSkeleton rows={8} />;
   }
 
   if (!tournament) {
     return (
-      <div className="text-center py-20">
-        <p className="text-muted-foreground">Tournament not found.</p>
-        <Button variant="ghost" onClick={() => router.push("/tournaments")} className="mt-4">
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back
-        </Button>
-      </div>
+      <EmptyState
+        icon={Trophy}
+        title="Tournament not found"
+        message="This tournament may have been deleted, or the link is out of date."
+        action={
+          <Button variant="outline" onClick={() => router.push("/tournaments")}>
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back to Tournaments
+          </Button>
+        }
+      />
     );
   }
 
