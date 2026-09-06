@@ -6,6 +6,9 @@ import {
   DragOverlay,
   useDraggable,
   useDroppable,
+  useSensor,
+  useSensors,
+  PointerSensor,
   DragStartEvent,
   DragEndEvent,
   pointerWithin,
@@ -50,9 +53,12 @@ function DraggablePlayer({
     data: { player },
   });
 
-  const style = transform
-    ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
-    : undefined;
+  // touchAction: none is required for touch drags — without it the browser
+  // intercepts the gesture for scrolling and the drag never starts.
+  const style: React.CSSProperties = {
+    ...(transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : {}),
+    touchAction: "none",
+  };
 
   return (
     <div
@@ -177,6 +183,7 @@ function PitchSlot({
             isOver && "border-green-400 shadow-[0_0_15px_rgba(74,222,128,0.4)]",
             isCaptain && "border-yellow-500 shadow-[0_0_12px_rgba(234,179,8,0.4)]"
           )}
+          style={player ? { touchAction: "none" } : undefined}
         >
           {player?.photo ? (
             <img src={player.photo} alt="" className="w-full h-full rounded-full object-cover" />
@@ -205,7 +212,7 @@ function PitchSlot({
                   onRemove();
                 }
               }}
-              className="w-4 h-4 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
+              className="w-4 h-4 rounded-full bg-destructive text-white flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 md:hover:opacity-100 transition-opacity"
               title="Remove from pitch (Shift+Click to also remove from team)"
             >
               <X className="h-2.5 w-2.5" />
@@ -222,7 +229,7 @@ function PitchSlot({
                 }
               }}
               className={cn(
-                "w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity",
+                "w-4 h-4 rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 md:hover:opacity-100 transition-opacity",
                 isCaptain ? "bg-yellow-500 text-white" : "bg-white/20 text-white hover:bg-yellow-500"
               )}
               title="Set captain (Shift+Click to remove from team)"
@@ -1088,6 +1095,15 @@ function FormationEditor() {
   // Selected match info
   const selectedMatch = scheduledMatches.find((m) => m._id === selectedMatchId);
 
+  // Touch-friendly drag sensors: a short press-and-hold activates the drag,
+  // while quick swipes still scroll the page on mobile. Without an
+  // activation constraint, touch drags fight the browser's scroll gesture.
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
+    })
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -1106,6 +1122,7 @@ function FormationEditor() {
 
   return (
     <DndContext
+      sensors={sensors}
       collisionDetection={pointerWithin}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
